@@ -10,4 +10,6 @@ set(SOURCE_FILES
 )
 add_executable(AGH___ZPO___NetSim main.cpp
         include/package.hpp
-        src/package.cpp)
+        src/package.cpp
+        include/storage_types.hpp
+        src/storage_types.cpp)
