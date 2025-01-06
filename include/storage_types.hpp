@@ -1,12 +1,7 @@
-//
-// Created by fsaw1 on 27.12.2024.
-//
+#ifndef STORAGE_TYPES_HXX
+#define STORAGE_TYPES_HXX
 
-#ifndef AGH___ZPO___NETSIM_STORAGE_TYPES_HPP
-#define AGH___ZPO___NETSIM_STORAGE_TYPES_HPP
-
-#include "package.hpp"
-
+#include "package.hxx"
 #include <list>
 
 enum class PackageQueueType {
@@ -17,59 +12,37 @@ enum class PackageQueueType {
 class IPackageStockpile {
 public:
     using const_iterator = std::list<Package>::const_iterator;
-
     virtual void push(Package&& package) = 0;
-
     virtual std::size_t size() const = 0;
-
     virtual bool empty() const = 0;
-
     virtual const_iterator cbegin() const = 0;
-
     virtual const_iterator cend() const = 0;
-
     virtual const_iterator begin() const = 0;
-
     virtual const_iterator end() const = 0;
-
     virtual ~IPackageStockpile() = default;
 };
-
 class IPackageQueue : public IPackageStockpile {
 public:
     virtual Package pop() = 0;
-
-    [[nodiscard ]] virtual  PackageQueueType get_queue_type() const = 0;
-
+    virtual PackageQueueType get_queue_type() const = 0;
     ~IPackageQueue() override = default;
 };
 
 class PackageQueue : public IPackageQueue {
 public:
-    explicit PackageQueue(PackageQueueType queue_type) : packages(), queue_type_(queue_type) {}
-
-    void push(Package&& package) override { packages.emplace_back(std::move(package)); }
-
-    [[nodiscard ]] std::size_t size() const override { return packages.size(); }
-
-    [[nodiscard ]] bool empty() const override { return packages.empty(); }
-
-    [[nodiscard ]] const_iterator cbegin() const override { return packages.cbegin(); }
-
-    [[nodiscard ]] const_iterator cend() const override { return packages.cend(); }
-
-    [[nodiscard ]] const_iterator begin() const override { return packages.cbegin(); }
-
-    [[nodiscard ]] const_iterator end() const override { return packages.cend(); }
-
+    explicit PackageQueue(PackageQueueType queue_type) : queue_(), queue_type_(queue_type) {}
+    void push(Package&& package) override { queue_.emplace_back(std::move(package)); }
+    std::size_t size() const override { return queue_.size(); }
+    bool empty() const override { return queue_.empty(); }
+    const_iterator cbegin() const override { return queue_.cbegin(); }
+    const_iterator cend() const override { return queue_.cend(); }
+    const_iterator begin() const override { return queue_.cbegin(); }
+    const_iterator end() const override { return queue_.cend(); }
     Package pop() override;
-
-    [[nodiscard ]] PackageQueueType get_queue_type() const override { return queue_type_; }
-
+    PackageQueueType get_queue_type() const override { return queue_type_; }
     ~PackageQueue() override = default;
 private:
-    std::list<Package> packages;
+    std::list<Package> queue_;
     PackageQueueType queue_type_;
 };
-
-#endif //AGH___ZPO___NETSIM_STORAGE_TYPES_HPP
+#endif //NETSIM_STORAGE_TYPES_HPP

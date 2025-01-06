@@ -1,44 +1,33 @@
-//
-// Created by fsaw1 on 27.12.2024.
-//
+#include "package.hxx"
 
-#include "package.hpp"
+std::set<ElementID> Package::assigned_IDs = {};
+std::set<ElementID> Package::freed_IDs = {};
 
-unsigned int Package::max_taken_ID=0;
-std::set<unsigned int> Package::freed_IDs={};
-
-
-unsigned int Package::generate_ID()
-{
-    if (!freed_IDs.empty()) {
-        ElementID id = *freed_IDs.begin();
-        freed_IDs.erase(freed_IDs.begin());
-        return id;
-    }
-    max_taken_ID++;
-    return max_taken_ID;
-}
-
-Package::~Package()
-{
-    freed_IDs.insert(this->ID_);
-}
-
-Package& Package::operator=(Package&&p) noexcept
-{
-    if (this == &p)
+Package& Package::operator=(Package&& package) noexcept {
+    if (this == &package)
         return *this;
-
-    Package::freed_IDs.insert(this->ID_);
-
-    this->ID_ = p.ID_;
+    assigned_IDs.erase(this->ID_);
+    freed_IDs.insert(this->ID_);
+    this->ID_ = package.ID_;
+    assigned_IDs.insert(this->ID_);
     return *this;
 }
 
+Package::Package() {
+    if (freed_IDs.empty()) {
+        if (assigned_IDs.empty()) {
+            ID_ = 1;
+        } else {
+            ID_ = *assigned_IDs.end() + 1;
+        }
+    } else {
+        ID_ = *freed_IDs.begin();
+        freed_IDs.erase(*freed_IDs.begin());
+    }
+    assigned_IDs.insert(ID_);
+}
 
-
-
-
-
-
-
+Package::~Package() {
+    freed_IDs.insert(ID_);
+    assigned_IDs.erase(ID_);
+}

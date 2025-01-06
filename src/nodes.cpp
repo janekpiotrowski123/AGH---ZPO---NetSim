@@ -1,79 +1,53 @@
-#include "nodes.hpp"
-#include "package.hpp"
-void ReceiverPreferences::add_receiver(IPackageReceiver* r) noexcept {
-    double map_size = static_cast<double>(preferences_.size());
-    double new_probability = 1.0 / (map_size + 1.0);
-    for (auto& [key, value] : preferences_) {
-        value *= map_size / (map_size + 1.0);
+#include "nodes.hxx"
+void ReceiverPreferences::add_receiver(IPackageReceiver *r) {
+    double num_of_receivers_begin = double(preferences_.size());
+    if (num_of_receivers_begin == 0) {
+        preferences_[r] = 1.0;
+    } else {for (auto &rec: preferences_) {
+            rec.second = 1 / (num_of_receivers_begin + 1);
+        }        preferences_[r] = 1 / (num_of_receivers_begin + 1);
     }
-    preferences_[r] = new_probability;
 }
-
-
-void ReceiverPreferences::remove_receiver(IPackageReceiver* r) {
-    if (preferences_.find(r) != preferences_.end()) {
-        preferences_.erase(r);
-
-        if (!preferences_.empty()) {
-            double new_probability = 1.0 / static_cast<double>(preferences_.size());
-            for (auto& [receiver, probability] : preferences_) {
-                probability = new_probability;
+void ReceiverPreferences::remove_receiver(IPackageReceiver *r) {
+    double num_of_receivers_begin = double(preferences_.size());
+    if (num_of_receivers_begin > 1) {
+        for (auto &rec: preferences_) { if (rec.first != r) { rec.second = 1 / (num_of_receivers_begin - 1);
             }
-        }
-    }
+        }    }    preferences_.erase(r);
 }
-
-IPackageReceiver* ReceiverPreferences::choose_receiver() const {
-    double random_value = pg_();
-    double cumulative_probability = 0.0;
-
-    for (const auto& [receiver, probability] : preferences_) {
-        cumulative_probability += probability;
-
-        if (random_value <= cumulative_probability) {
-            return receiver;
-        }
-    }
-
+IPackageReceiver *ReceiverPreferences::choose_receiver() {
+    auto prob = pg_();    if (prob >= 0 && prob <= 1) {        double distribution = 0.0;
+        for (auto &rec: preferences_) {            distribution = distribution + rec.second;
+            if (distribution < 0 || distribution > 1) {
+                return nullptr;            }
+            if (prob <= distribution) {                return rec.first;
+            }        }
+        return nullptr;    }
     return nullptr;
 }
-
-
-void PackageSender::send_package(){
-    if(sending_buffer_){
-        IPackageReceiver* receiver = receiver_preferences_.choose_receiver();
-
-        if(receiver){
-            receiver->receive_package(std::move(*sending_buffer_));
-            sending_buffer_.reset();
-        }
-    }
+void PackageSender::send_package() {
+    IPackageReceiver *receiver;
+    if (bufor_) {
+        receiver = receiver_preferences_.choose_receiver();
+        receiver->receive_package(std::move(*bufor_));
+        bufor_.reset();
+    }}void Worker::do_work(Time t) {
+    if (!bufor_ && !q_->empty()) {
+        bufor_.emplace(q_->pop());        t_ = t;    } else {
+        if (t - t_ + 1 == pd_) {
+            push_package(Package(bufor_.value().get_id()));
+            bufor_.reset();            if (!q_->empty()) {
+                bufor_.emplace(q_->pop());
+            }        }
+    }}
+void Worker::receive_package(Package &&p) {    q_->push(std::move(p));
 }
-
-void Ramp::deliver_goods(Time t){
-    if(t % di_ == 0){
-        Package product = Package(id_);
-        push_package(std::move(product));
-        send_package(); // chyba to nie tu: 
-    }
+void Storehouse::receive_package(Package &&p) {    d_->push(std::move(p));
 }
-
-// void Storehouse::receive_package(Package&& p) override {
-//     d_->push(std::move(p));
-// } nie działało podkreślało override
-
-void Worker::do_work(Time t) {
-    if (sending_buffer_) {
-        if (t - processing_start_time_.value() >= pd_) {
-            push_package(std::move(*sending_buffer_));
-            send_package();
-            sending_buffer_.reset();
-            processing_start_time_.reset();
+void Ramp::deliver_goods(Time t) {
+    if (!bufor_) {        push_package(Package());        bufor_.emplace(id_);
+        t_ = t;    } else {
+        if (t - di_ == t_) {            push_package(Package());
         }
-    }
-
-    if (!sending_buffer_ && !q_->empty()) {
-        sending_buffer_ = q_->pop();
-        processing_start_time_ = t;
     }
 }
