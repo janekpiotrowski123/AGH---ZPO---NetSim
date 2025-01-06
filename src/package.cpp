@@ -2,7 +2,7 @@
 // Created by fsaw1 on 27.12.2024.
 //
 
-#include"package.hpp"
+#include "package.hpp"
 
 unsigned int Package::max_taken_ID=0;
 std::set<unsigned int> Package::freed_IDs={};
@@ -10,9 +10,11 @@ std::set<unsigned int> Package::freed_IDs={};
 
 unsigned int Package::generate_ID()
 {
-    if(!freed_IDs.empty())
-        return *freed_IDs.begin();
-
+    if (!freed_IDs.empty()) {
+        ElementID id = *freed_IDs.begin();
+        freed_IDs.erase(freed_IDs.begin());
+        return id;
+    }
     max_taken_ID++;
     return max_taken_ID;
 }

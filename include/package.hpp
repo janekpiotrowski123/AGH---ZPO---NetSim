@@ -5,9 +5,9 @@
 #ifndef AGH_ZPO_NETSIM_Package_HPP
 #define AGH_ZPO_NETSIM_Package_HPP
 
+#include "types.hpp"
 #include <set>
 
-using ElementID= unsigned int;
 
 class Package
 {
